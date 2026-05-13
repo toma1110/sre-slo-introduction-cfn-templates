@@ -1,0 +1,492 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "AWS SLO adoption course hands-on: CloudWatch SLI metrics, SLO risk alarms, burn-rate alarms, dashboard, SNS, and optional Application Signals SLO."
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: udemy-slo-sample
+    Description: Project name used for resource names and metric dimensions.
+    AllowedPattern: "^[a-z0-9][a-z0-9-]{2,40}[a-z0-9]$"
+    ConstraintDescription: Use 4 to 42 lowercase letters, numbers, and hyphens.
+  ServiceName:
+    Type: String
+    Default: sample-api
+    Description: Service dimension used for the sample SLI custom metrics.
+    AllowedPattern: "^[a-z0-9][a-z0-9-]{1,40}[a-z0-9]$"
+    ConstraintDescription: Use 3 to 42 lowercase letters, numbers, and hyphens.
+  NotificationEmail:
+    Type: String
+    Default: ""
+    Description: Optional email address for SNS notification subscription.
+    AllowedPattern: "^$|^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+    ConstraintDescription: Leave empty or enter a valid email address.
+  DashboardTitle:
+    Type: String
+    Default: SLO Adoption Dashboard
+    Description: Title shown in the CloudWatch dashboard.
+  AvailabilitySloTarget:
+    Type: Number
+    Default: 99.9
+    Description: Availability SLO target percentage. Error budget percentage is 100 minus this value.
+    MinValue: 90
+    MaxValue: 99.99
+  LatencyThresholdMs:
+    Type: Number
+    Default: 300
+    Description: p99 latency SLO threshold in milliseconds.
+    MinValue: 1
+    MaxValue: 60000
+  ErrorRateThresholdPercent:
+    Type: Number
+    Default: 1
+    Description: Error-rate alarm threshold percentage.
+    MinValue: 0.01
+    MaxValue: 100
+  FastBurnRateThreshold:
+    Type: Number
+    Default: 14
+    Description: Fast burn-rate alarm threshold. 14 means the error budget is being consumed about 14 times faster than planned.
+    MinValue: 1
+    MaxValue: 1000
+  SlowBurnRateThreshold:
+    Type: Number
+    Default: 2
+    Description: Slow burn-rate alarm threshold for sustained budget consumption.
+    MinValue: 0.1
+    MaxValue: 1000
+  EnableApplicationSignalsSlo:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Create an optional Application Signals SLO. This may create a service-linked role and can incur SLO charges.
+
+Conditions:
+  HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, ""]]
+  CreateApplicationSignalsSlo: !Equals [!Ref EnableApplicationSignalsSlo, "true"]
+
+Resources:
+  SloAlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${ProjectName}-slo-topic"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Course
+          Value: aws-slo-adoption-course
+
+  SloEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotificationEmail
+    Properties:
+      TopicArn: !Ref SloAlarmTopic
+      Protocol: email
+      Endpoint: !Ref NotificationEmail
+
+  AvailabilityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-availability-slo-risk"
+      AlarmDescription: "Availability SLI is below the SLO target."
+      Namespace: "UdemyAICompany/SLO"
+      MetricName: "Availability"
+      Dimensions:
+        - Name: ProjectName
+          Value: !Ref ProjectName
+        - Name: Service
+          Value: !Ref ServiceName
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: !Ref AvailabilitySloTarget
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref SloAlarmTopic
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Course
+          Value: aws-slo-adoption-course
+
+  LatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-latency-slo-risk"
+      AlarmDescription: "p99 latency SLI is above the SLO threshold."
+      Namespace: "UdemyAICompany/SLO"
+      MetricName: "Latency"
+      Dimensions:
+        - Name: ProjectName
+          Value: !Ref ProjectName
+        - Name: Service
+          Value: !Ref ServiceName
+      ExtendedStatistic: p99
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: !Ref LatencyThresholdMs
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref SloAlarmTopic
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Course
+          Value: aws-slo-adoption-course
+
+  ErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-error-rate-slo-risk"
+      AlarmDescription: "Error rate calculated from ErrorCount / RequestCount is above the threshold."
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: !Ref ErrorRateThresholdPercent
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref SloAlarmTopic
+      Metrics:
+        - Id: m1
+          ReturnData: false
+          MetricStat:
+            Period: 60
+            Stat: Sum
+            Metric:
+              Namespace: "UdemyAICompany/SLO"
+              MetricName: "ErrorCount"
+              Dimensions:
+                - Name: ProjectName
+                  Value: !Ref ProjectName
+                - Name: Service
+                  Value: !Ref ServiceName
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Period: 60
+            Stat: Sum
+            Metric:
+              Namespace: "UdemyAICompany/SLO"
+              MetricName: "RequestCount"
+              Dimensions:
+                - Name: ProjectName
+                  Value: !Ref ProjectName
+                - Name: Service
+                  Value: !Ref ServiceName
+        - Id: e1
+          Expression: "IF(m2 > 0, 100 * m1 / m2, 0)"
+          Label: "Error rate (%)"
+          ReturnData: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Course
+          Value: aws-slo-adoption-course
+
+  FastBurnRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-fast-burn-rate"
+      AlarmDescription: "Fast burn-rate alarm based on error-rate divided by the allowed error budget percentage."
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: !Ref FastBurnRateThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref SloAlarmTopic
+      Metrics:
+        - Id: m1
+          ReturnData: false
+          MetricStat:
+            Period: 60
+            Stat: Sum
+            Metric:
+              Namespace: "UdemyAICompany/SLO"
+              MetricName: "ErrorCount"
+              Dimensions:
+                - Name: ProjectName
+                  Value: !Ref ProjectName
+                - Name: Service
+                  Value: !Ref ServiceName
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Period: 60
+            Stat: Sum
+            Metric:
+              Namespace: "UdemyAICompany/SLO"
+              MetricName: "RequestCount"
+              Dimensions:
+                - Name: ProjectName
+                  Value: !Ref ProjectName
+                - Name: Service
+                  Value: !Ref ServiceName
+        - Id: e1
+          Expression: !Sub "IF(m2 > 0, (100 * m1 / m2) / (100 - ${AvailabilitySloTarget}), 0)"
+          Label: "Fast burn rate"
+          ReturnData: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Course
+          Value: aws-slo-adoption-course
+
+  SlowBurnRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-slow-burn-rate"
+      AlarmDescription: "Sustained burn-rate alarm using a five-minute period."
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: !Ref SlowBurnRateThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref SloAlarmTopic
+      Metrics:
+        - Id: m1
+          ReturnData: false
+          MetricStat:
+            Period: 300
+            Stat: Sum
+            Metric:
+              Namespace: "UdemyAICompany/SLO"
+              MetricName: "ErrorCount"
+              Dimensions:
+                - Name: ProjectName
+                  Value: !Ref ProjectName
+                - Name: Service
+                  Value: !Ref ServiceName
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Period: 300
+            Stat: Sum
+            Metric:
+              Namespace: "UdemyAICompany/SLO"
+              MetricName: "RequestCount"
+              Dimensions:
+                - Name: ProjectName
+                  Value: !Ref ProjectName
+                - Name: Service
+                  Value: !Ref ServiceName
+        - Id: e1
+          Expression: !Sub "IF(m2 > 0, (100 * m1 / m2) / (100 - ${AvailabilitySloTarget}), 0)"
+          Label: "Slow burn rate"
+          ReturnData: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Course
+          Value: aws-slo-adoption-course
+
+  SloDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${ProjectName}-dashboard"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 3,
+              "properties": {
+                "markdown": "# ${DashboardTitle}\\nCloudFormationで作るSLOハンズオンです。可用性、レイテンシ、エラー率、バーンレートをCloudWatch Custom Metricsで確認します。"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 3,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Availability SLI",
+                "region": "${AWS::Region}",
+                "metrics": [
+                  [ "UdemyAICompany/SLO", "Availability", "ProjectName", "${ProjectName}", "Service", "${ServiceName}" ]
+                ],
+                "stat": "Average",
+                "period": 60,
+                "view": "timeSeries",
+                "annotations": {
+                  "horizontal": [
+                    { "label": "SLO ${AvailabilitySloTarget}%", "value": ${AvailabilitySloTarget} }
+                  ]
+                },
+                "yAxis": { "left": { "min": 95, "max": 100 } }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 3,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Latency SLI p99",
+                "region": "${AWS::Region}",
+                "metrics": [
+                  [ "UdemyAICompany/SLO", "Latency", "ProjectName", "${ProjectName}", "Service", "${ServiceName}", { "stat": "p99" } ]
+                ],
+                "period": 60,
+                "view": "timeSeries",
+                "annotations": {
+                  "horizontal": [
+                    { "label": "SLO ${LatencyThresholdMs}ms", "value": ${LatencyThresholdMs} }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 9,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Error Rate (%)",
+                "region": "${AWS::Region}",
+                "metrics": [
+                  [ { "expression": "IF(m2 > 0, 100 * m1 / m2, 0)", "label": "Error rate (%)", "id": "e1", "region": "${AWS::Region}" } ],
+                  [ "UdemyAICompany/SLO", "ErrorCount", "ProjectName", "${ProjectName}", "Service", "${ServiceName}", { "id": "m1", "visible": false, "stat": "Sum" } ],
+                  [ ".", "RequestCount", ".", ".", ".", ".", { "id": "m2", "visible": false, "stat": "Sum" } ]
+                ],
+                "period": 60,
+                "view": "timeSeries",
+                "annotations": {
+                  "horizontal": [
+                    { "label": "Error threshold ${ErrorRateThresholdPercent}%", "value": ${ErrorRateThresholdPercent} }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 9,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Burn Rate",
+                "region": "${AWS::Region}",
+                "metrics": [
+                  [ { "expression": "IF(m2 > 0, (100 * m1 / m2) / (100 - ${AvailabilitySloTarget}), 0)", "label": "Burn rate", "id": "e1", "region": "${AWS::Region}" } ],
+                  [ "UdemyAICompany/SLO", "ErrorCount", "ProjectName", "${ProjectName}", "Service", "${ServiceName}", { "id": "m1", "visible": false, "stat": "Sum" } ],
+                  [ ".", "RequestCount", ".", ".", ".", ".", { "id": "m2", "visible": false, "stat": "Sum" } ]
+                ],
+                "period": 60,
+                "view": "timeSeries",
+                "annotations": {
+                  "horizontal": [
+                    { "label": "Fast burn ${FastBurnRateThreshold}x", "value": ${FastBurnRateThreshold} },
+                    { "label": "Slow burn ${SlowBurnRateThreshold}x", "value": ${SlowBurnRateThreshold} }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 15,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "title": "Requests and Errors",
+                "region": "${AWS::Region}",
+                "metrics": [
+                  [ "UdemyAICompany/SLO", "RequestCount", "ProjectName", "${ProjectName}", "Service", "${ServiceName}", { "stat": "Sum", "label": "Requests" } ],
+                  [ ".", "ErrorCount", ".", ".", ".", ".", { "stat": "Sum", "label": "Errors" } ]
+                ],
+                "period": 60,
+                "view": "timeSeries"
+              }
+            }
+          ]
+        }
+
+  OptionalLatencySlo:
+    Type: AWS::ApplicationSignals::ServiceLevelObjective
+    Condition: CreateApplicationSignalsSlo
+    Properties:
+      Name: !Sub "${ProjectName}-latency-slo"
+      Description: "Optional period-based SLO on a sample CloudWatch latency metric."
+      Sli:
+        SliMetric:
+          MetricDataQueries:
+            - MetricStat:
+                Period: 60
+                Metric:
+                  Namespace: "UdemyAICompany/SLO"
+                  MetricName: "Latency"
+                  Dimensions:
+                    - Name: ProjectName
+                      Value: !Ref ProjectName
+                    - Name: Service
+                      Value: !Ref ServiceName
+                Stat: "p99"
+                Unit: "Milliseconds"
+              Id: "latency"
+              ReturnData: false
+            - Id: "latencyfinal"
+              ReturnData: true
+              Expression: "latency * 1"
+        MetricThreshold: !Ref LatencyThresholdMs
+        ComparisonOperator: "LessThanOrEqualTo"
+      Goal:
+        Interval:
+          RollingInterval:
+            DurationUnit: "DAY"
+            Duration: 1
+        AttainmentGoal: !Ref AvailabilitySloTarget
+        WarningThreshold: 95.0
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Course
+          Value: aws-slo-adoption-course
+
+Outputs:
+  MetricsNamespace:
+    Description: Custom metric namespace used by the hands-on.
+    Value: "UdemyAICompany/SLO"
+  ProjectNameOutput:
+    Description: Project name dimension value used by the sample metrics.
+    Value: !Ref ProjectName
+  ServiceNameOutput:
+    Description: Service dimension value used by the sample metrics.
+    Value: !Ref ServiceName
+  AlarmTopicArn:
+    Description: SNS topic ARN for SLO alarm notifications.
+    Value: !Ref SloAlarmTopic
+  AvailabilityAlarmName:
+    Description: CloudWatch alarm name for availability SLO risk.
+    Value: !Ref AvailabilityAlarm
+  LatencyAlarmName:
+    Description: CloudWatch alarm name for latency SLO risk.
+    Value: !Ref LatencyAlarm
+  ErrorRateAlarmName:
+    Description: CloudWatch alarm name for error-rate SLO risk.
+    Value: !Ref ErrorRateAlarm
+  FastBurnRateAlarmName:
+    Description: CloudWatch alarm name for fast burn-rate risk.
+    Value: !Ref FastBurnRateAlarm
+  SlowBurnRateAlarmName:
+    Description: CloudWatch alarm name for sustained burn-rate risk.
+    Value: !Ref SlowBurnRateAlarm
+  DashboardName:
+    Description: CloudWatch dashboard name.
+    Value: !Ref SloDashboard
+  OptionalLatencySloArn:
+    Condition: CreateApplicationSignalsSlo
+    Description: Optional Application Signals SLO ARN.
+    Value: !Ref OptionalLatencySlo
