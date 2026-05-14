@@ -1,57 +1,57 @@
-# SRE SLO Introduction CloudFormation Templates
+# SRE SLO入門 CloudFormationテンプレート
 
-CloudFormation templates for a hands-on introduction to SLO monitoring on AWS.
+AWS上でSLO監視の基本を学ぶための、CloudFormationハンズオン用テンプレートです。
 
-This repository builds a small, reproducible SLO monitoring stack using CloudWatch custom metrics, CloudWatch alarms, a dashboard, and SNS. It is intended for learning SLI/SLO/error-budget/burn-rate concepts without requiring a real production application.
+このリポジトリでは、CloudWatch Custom Metrics、CloudWatch Alarm、CloudWatch Dashboard、SNSを使って、小さく再現しやすいSLO監視スタックを作成します。実際の本番アプリケーションを用意しなくても、SLI、SLO、エラーバジェット、バーンレートの考え方を手元で確認できます。
 
-## What This Creates
+## 作成されるもの
 
-- SNS Topic for alarm notifications
-- CloudWatch Alarms
-  - Availability SLO risk
-  - p99 latency SLO risk
-  - Error-rate SLO risk
-  - Fast burn-rate risk
-  - Slow burn-rate risk
+- アラーム通知用のSNS Topic
+- CloudWatch Alarm
+  - 可用性SLOリスク
+  - p99レイテンシSLOリスク
+  - エラー率SLOリスク
+  - 高速バーンレートリスク
+  - 低速バーンレートリスク
 - CloudWatch Dashboard
-  - Availability
-  - Latency p99
-  - Error rate
-  - Burn rate
-  - Requests and errors
-- Optional Application Signals SLO
-  - Disabled by default
-  - Enabled only with `ENABLE_APPLICATION_SIGNALS_SLO=true`
+  - 可用性
+  - p99レイテンシ
+  - エラー率
+  - バーンレート
+  - リクエスト数とエラー数
+- オプションのApplication Signals SLO
+  - デフォルトでは作成しません
+  - `ENABLE_APPLICATION_SIGNALS_SLO=true` を指定した場合のみ作成します
 
-## Cost Warning
+## コスト注意
 
-This hands-on can incur AWS charges for CloudWatch alarms, dashboards, custom metrics, SNS, and optional Application Signals SLOs.
+このハンズオンでは、CloudWatch Alarm、Dashboard、Custom Metrics、SNS、オプションのApplication Signals SLOによりAWS料金が発生する場合があります。
 
-Delete the stack after testing:
+検証後は必ずスタックを削除してください。
 
 ```bash
 ./validate.sh delete
 ```
 
-CloudWatch custom metrics cannot be manually deleted immediately; they stop appearing after they age out.
+CloudWatch Custom Metricsは手動で即時削除できません。利用を停止すると、時間経過後に表示されなくなります。
 
-## Prerequisites
+## 前提条件
 
 - AWS CLI v2
 - Bash
-- AWS credentials or an IAM role with permission to use:
+- 以下を操作できるAWS認証情報、またはIAMロール
   - CloudFormation
   - CloudWatch
   - SNS
-  - Application Signals, only if optional SLO is enabled
+  - Application Signals（オプションSLOを有効化する場合のみ）
 
-Check your AWS identity:
+AWSの認証情報を確認します。
 
 ```bash
 aws sts get-caller-identity
 ```
 
-## Quick Start
+## クイックスタート
 
 ```bash
 git clone https://github.com/toma1110/sre-slo-introduction-cfn-templates.git
@@ -68,23 +68,23 @@ export SERVICE_NAME=sample-api
 ./smoke_test.sh
 ```
 
-Open the CloudWatch dashboard named:
+作成後、CloudWatch Dashboardで以下のダッシュボードを開きます。
 
 ```text
 sre-slo-intro-dev-dashboard
 ```
 
-Then publish an unhealthy sample:
+次に、SLOを悪化させるサンプルメトリクスを投入します。
 
 ```bash
 ./validate.sh put-bad
 ```
 
-Alarm state and dashboard graphs can take a few minutes to update.
+Alarmの状態やDashboardのグラフ反映には数分かかる場合があります。
 
-## Full Lifecycle Test
+## フルライフサイクルテスト
 
-Use a unique stack name. This command validates, creates, publishes good metrics, runs smoke tests, updates the stack, publishes bad metrics, runs smoke tests again, and deletes the stack.
+一意なスタック名を指定して実行してください。このコマンドは、テンプレート検証、スタック作成、正常メトリクス投入、スモークテスト、スタック更新、異常メトリクス投入、再スモークテスト、スタック削除までを一括で実行します。
 
 ```bash
 export AWS_REGION=us-east-1
@@ -95,7 +95,7 @@ export SERVICE_NAME=sample-api
 ./validate.sh full
 ```
 
-## Commands
+## コマンド
 
 ```bash
 ./validate.sh validate
@@ -108,7 +108,7 @@ export SERVICE_NAME=sample-api
 ./validate.sh full
 ```
 
-Sample metric scenarios:
+サンプルメトリクスのシナリオ:
 
 ```bash
 SCENARIO=good ./validate.sh put-metrics
@@ -117,41 +117,41 @@ SCENARIO=bad ./validate.sh put-metrics
 SCENARIO=recovery ./validate.sh put-metrics
 ```
 
-## Parameters
+## パラメータ
 
-| Environment variable | Default | Description |
+| 環境変数 | デフォルト | 説明 |
 | --- | --- | --- |
-| `STACK_NAME` | `aws-slo-adoption-dev-slo` | CloudFormation stack name |
-| `AWS_REGION` | `us-east-1` | AWS Region |
-| `PROJECT_NAME` | `udemy-slo-sample` | Resource name prefix and metric dimension |
-| `SERVICE_NAME` | `sample-api` | Metric dimension for the sample service |
-| `NOTIFICATION_EMAIL` | empty | Optional SNS email subscription |
-| `DASHBOARD_TITLE` | `SLO Adoption Dashboard` | Dashboard title |
-| `AVAILABILITY_SLO_TARGET` | `99.9` | Availability SLO target percentage |
-| `LATENCY_THRESHOLD_MS` | `300` | p99 latency threshold |
-| `ERROR_RATE_THRESHOLD_PERCENT` | `1` | Error-rate alarm threshold |
-| `FAST_BURN_RATE_THRESHOLD` | `14` | Fast burn-rate threshold |
-| `SLOW_BURN_RATE_THRESHOLD` | `2` | Slow burn-rate threshold |
-| `ENABLE_APPLICATION_SIGNALS_SLO` | `false` | Create optional Application Signals SLO |
+| `STACK_NAME` | `aws-slo-adoption-dev-slo` | CloudFormationスタック名 |
+| `AWS_REGION` | `us-east-1` | AWSリージョン |
+| `PROJECT_NAME` | `udemy-slo-sample` | リソース名の接頭辞、CloudWatchメトリクスのディメンション |
+| `SERVICE_NAME` | `sample-api` | サンプルサービス用のメトリクスディメンション |
+| `NOTIFICATION_EMAIL` | 空 | 任意のSNSメール通知先 |
+| `DASHBOARD_TITLE` | `SLO導入ダッシュボード` | Dashboardタイトル |
+| `AVAILABILITY_SLO_TARGET` | `99.9` | 可用性SLO目標値（%） |
+| `LATENCY_THRESHOLD_MS` | `300` | p99レイテンシしきい値 |
+| `ERROR_RATE_THRESHOLD_PERCENT` | `1` | エラー率アラームしきい値 |
+| `FAST_BURN_RATE_THRESHOLD` | `14` | 高速バーンレートしきい値 |
+| `SLOW_BURN_RATE_THRESHOLD` | `2` | 低速バーンレートしきい値 |
+| `ENABLE_APPLICATION_SIGNALS_SLO` | `false` | オプションのApplication Signals SLOを作成するか |
 
-## Optional Application Signals SLO
+## オプション: Application Signals SLO
 
-The default hands-on does not create an Application Signals SLO. To enable it:
+デフォルトのハンズオンではApplication Signals SLOを作成しません。有効化する場合は以下を指定します。
 
 ```bash
 export ENABLE_APPLICATION_SIGNALS_SLO=true
 ./validate.sh create
 ```
 
-Notes:
+注意:
 
-- Application Signals SLOs can incur charges.
-- AWS may create the `AWSServiceRoleForCloudWatchApplicationSignals` service-linked role.
-- A real instrumented application and enough metric data may be required for meaningful SLO evaluation.
+- Application Signals SLOには料金が発生する場合があります。
+- AWSが `AWSServiceRoleForCloudWatchApplicationSignals` サービスリンクロールを作成する場合があります。
+- 意味のあるSLO評価には、実際に計装されたアプリケーションと十分なメトリクスデータが必要になる場合があります。
 
-## Troubleshooting
+## トラブルシューティング
 
-View recent CloudFormation events:
+直近のCloudFormationイベントを確認します。
 
 ```bash
 aws cloudformation describe-stack-events \
@@ -160,7 +160,7 @@ aws cloudformation describe-stack-events \
   --max-items 20
 ```
 
-Check a dashboard:
+Dashboardを確認します。
 
 ```bash
 aws cloudwatch get-dashboard \
@@ -168,7 +168,7 @@ aws cloudwatch get-dashboard \
   --region "$AWS_REGION"
 ```
 
-Check an alarm:
+Alarmを確認します。
 
 ```bash
 aws cloudwatch describe-alarms \
@@ -176,20 +176,20 @@ aws cloudwatch describe-alarms \
   --region "$AWS_REGION"
 ```
 
-Common causes:
+よくある原因:
 
-- `AWS_REGION` differs from where the stack was created.
-- `PROJECT_NAME` does not match the metric dimensions.
-- CloudWatch metrics and alarms have not updated yet.
-- SNS email subscription has not been confirmed.
-- A failed stack with the same `STACK_NAME` already exists.
+- `AWS_REGION` がスタックを作成したリージョンと異なる
+- `PROJECT_NAME` がメトリクスのディメンションと一致していない
+- CloudWatch MetricsやAlarmの反映にまだ時間がかかっている
+- SNSメール通知の確認が完了していない
+- 同じ `STACK_NAME` の失敗スタックが既に存在する
 
-## Validation
+## 検証結果
 
-The template was validated with:
+テンプレートは以下で検証済みです。
 
 - `aws cloudformation validate-template`
-- IaC validation through cfn-lint tooling
-- A real AWS lifecycle test in `us-east-1`
+- cfn-lint系ツールによるIaC静的検証
+- `us-east-1` での実AWSライフサイクルテスト
 
-See [docs/VALIDATION.md](docs/VALIDATION.md).
+詳細は [docs/VALIDATION.md](docs/VALIDATION.md) を参照してください。

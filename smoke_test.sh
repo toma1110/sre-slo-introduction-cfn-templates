@@ -41,7 +41,7 @@ assert_equals() {
   local message="$3"
 
   if [[ "$actual" != "$expected" ]]; then
-    echo "${message}: expected=${expected}, actual=${actual}" >&2
+    echo "${message}: 期待値=${expected}, 実際=${actual}" >&2
     exit 1
   fi
 }
@@ -107,4 +107,4 @@ if [[ "$ENABLE_APPLICATION_SIGNALS_SLO" == "true" ]]; then
   log "Application Signals SLO Outputを確認しました: ${OPTIONAL_SLO_ARN}"
 fi
 
-log "smoke testが成功しました"
+log "スモークテストが成功しました"

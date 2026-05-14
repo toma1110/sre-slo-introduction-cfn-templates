@@ -1,13 +1,13 @@
-# Hands-on Validation Report
+# ハンズオン検証レポート
 
-## Target
+## 対象
 
-- Repository: `toma1110/sre-slo-introduction-cfn-templates`
-- Stack Name: `slo-cfn-20260513-0719`
-- Region: `us-east-1`
-- Validation Date: 2026-05-13
+- リポジトリ: `toma1110/sre-slo-introduction-cfn-templates`
+- スタック名: `slo-cfn-20260513-0719`
+- リージョン: `us-east-1`
+- 検証日: 2026-05-13
 
-## Source of Truth
+## 正とするファイル
 
 - `README.md`
 - `template.yaml`
@@ -15,7 +15,7 @@
 - `smoke_test.sh`
 - `put_sample_metrics.sh`
 
-## Created Hands-on Scope
+## 作成したハンズオン範囲
 
 - CloudWatch Custom Metrics
   - `Availability`
@@ -23,37 +23,37 @@
   - `RequestCount`
   - `ErrorCount`
 - CloudWatch Alarm
-  - Availability SLO risk
-  - Latency SLO risk
-  - Error-rate SLO risk
-  - Fast burn-rate
-  - Slow burn-rate
+  - 可用性SLOリスク
+  - レイテンシSLOリスク
+  - エラー率SLOリスク
+  - 高速バーンレート
+  - 低速バーンレート
 - CloudWatch Dashboard
-- SNS Topic and optional email subscription
-- Optional Application Signals SLO
-- Sample metric publishing script
+- SNS Topicと任意のメール通知
+- オプションのApplication Signals SLO
+- サンプルメトリクス投入スクリプト
 
-## AWS Documentation Checks
+## AWS公式ドキュメント確認
 
-Search terms:
+確認に使った検索語:
 
 - `AWS::ApplicationSignals::ServiceLevelObjective CloudFormation service linked role SLO`
 - `AWS::CloudWatch::Alarm MetricDataQuery Metrics math expression CloudFormation`
 - `CloudWatch metric math IF expression error rate divide Errors Invocations`
 
-Confirmed:
+確認結果:
 
-- `AWS::ApplicationSignals::ServiceLevelObjective` can create an Application Signals SLO and may create/use the CloudWatch Application Signals service-linked role.
-- `AWS::CloudWatch::Alarm MetricDataQuery` supports metric math expressions for alarms, and the watched expression must return a single time series.
-- CloudWatch Metric Math supports expressions that combine metrics, including error-rate style calculations.
+- `AWS::ApplicationSignals::ServiceLevelObjective` でApplication Signals SLOを作成でき、CloudWatch Application Signalsのサービスリンクロールを作成または利用する場合があります。
+- `AWS::CloudWatch::Alarm MetricDataQuery` はAlarm用のメトリクス演算式に対応しており、監視対象の式は単一時系列を返す必要があります。
+- CloudWatch Metric Mathでは、エラー率計算のように複数メトリクスを組み合わせる式を利用できます。
 
-Reference URLs:
+参照URL:
 
 - https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-applicationsignals-servicelevelobjective.html
 - https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-metricdataquery.html
 - https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/using-metric-math.html
 
-## Commands
+## 実行コマンド
 
 ```bash
 bash -n validate.sh
@@ -70,29 +70,29 @@ AWS_REGION=us-east-1 \
 ./validate.sh full
 ```
 
-Additional static check:
+追加の静的チェック:
 
 ```bash
-# DashboardBody after default Fn::Sub values was parsed as JSON.
+# デフォルト値でFn::Sub相当の置換を行ったDashboardBodyをJSONとしてパースできることを確認。
 ```
 
-## Results
+## 結果
 
-- shell syntax validate: pass
-- `aws cloudformation validate-template`: pass
-- `./validate.sh validate`: pass
-- DashboardBody JSON parse with default substitutions: pass
-- awsiac CloudFormation template validation: pass
-- stack create: pass
-- good sample metrics publish: pass
-- smoke test after create: pass
-- stack update: pass
-- bad sample metrics publish: pass
-- smoke test after update: pass
-- stack delete: pass
-- post-delete describe-stacks check: pass, stack no longer exists
+- shell構文チェック: 成功
+- `aws cloudformation validate-template`: 成功
+- `./validate.sh validate`: 成功
+- DashboardBody JSONパース確認: 成功
+- awsiac CloudFormationテンプレート検証: 成功
+- スタック作成: 成功
+- 正常サンプルメトリクス投入: 成功
+- 作成後スモークテスト: 成功
+- スタック更新: 成功
+- 異常サンプルメトリクス投入: 成功
+- 更新後スモークテスト: 成功
+- スタック削除: 成功
+- 削除後の `describe-stacks` 確認: 成功。スタックが存在しないことを確認
 
-## Executed AWS Lifecycle
+## 実行したAWSライフサイクル
 
 ```bash
 STACK_NAME=slo-cfn-20260513-0719 \
@@ -102,16 +102,16 @@ AWS_REGION=us-east-1 \
 ./validate.sh full
 ```
 
-Timeline:
+タイムライン:
 
-- 2026-05-13T09:52:23Z: template validation started
-- 2026-05-13T09:53:06Z: stack create completed
-- 2026-05-13T09:53:32Z: first smoke test completed
-- 2026-05-13T09:54:18Z: stack update completed
-- 2026-05-13T09:54:44Z: second smoke test completed
-- 2026-05-13T09:55:51Z: stack delete completed
+- 2026-05-13T09:52:23Z: テンプレート検証開始
+- 2026-05-13T09:53:06Z: スタック作成完了
+- 2026-05-13T09:53:32Z: 1回目のスモークテスト完了
+- 2026-05-13T09:54:18Z: スタック更新完了
+- 2026-05-13T09:54:44Z: 2回目のスモークテスト完了
+- 2026-05-13T09:55:51Z: スタック削除完了
 
-Post-delete check:
+削除後確認:
 
 ```bash
 aws cloudformation describe-stacks \
@@ -119,32 +119,56 @@ aws cloudformation describe-stacks \
   --region us-east-1
 ```
 
-Result: `ValidationError`, stack does not exist.
+結果: `ValidationError`。スタックは存在しません。
 
-## README Reproduction
+## README再現性
 
-README contains copyable steps for:
+READMEには、コピーして実行できる以下の手順を記載しています。
 
-- environment setup
-- template validation
-- stack creation
-- good metric publishing
-- smoke test
-- bad metric publishing
-- stack update
-- stack delete
-- Application Signals optional path
-- troubleshooting
+- 環境変数設定
+- テンプレート検証
+- スタック作成
+- 正常メトリクス投入
+- スモークテスト
+- 異常メトリクス投入
+- スタック更新
+- スタック削除
+- Application Signalsの任意パス
+- トラブルシューティング
 
-Status: reproduced with AWS lifecycle execution.
+状態: 実AWSライフサイクル実行で再現済みです。
 
-## Notes
+## 日本語化後の確認
 
-- Default path uses CloudWatch Custom Metrics only to keep the hands-on small and understandable.
-- Application Signals SLO is opt-in via `ENABLE_APPLICATION_SIGNALS_SLO=true`.
-- Custom Metrics do not delete immediately; they age out after use.
-- SNS email subscriptions require recipient confirmation.
+この日本語化では、公開説明文、CloudFormationのDescription、AlarmDescription、Dashboard表示ラベル、スクリプトのヘルプ表示を修正しました。
 
-## Status
+追加確認日: 2026-05-14
 
-Pass
+実行対象:
+
+- `bash -n validate.sh`
+- `bash -n smoke_test.sh`
+- `bash -n put_sample_metrics.sh`
+- `aws cloudformation validate-template --template-body file://template.yaml --region us-east-1`
+- `./validate.sh validate`
+- DashboardBody JSONパース確認
+
+結果:
+
+- shell構文チェック: 成功
+- `aws cloudformation validate-template`: 成功
+- `./validate.sh validate`: 成功
+- DashboardBody JSONパース確認: 成功
+
+スタック作成、更新、削除を伴う `./validate.sh full` はAWSリソースを作成するため、既存の2026-05-13実行結果を維持し、再実行は必要に応じて行います。
+
+## 注意点
+
+- デフォルト構成は、ハンズオンを小さく理解しやすくするためCloudWatch Custom Metricsのみを使います。
+- Application Signals SLOは `ENABLE_APPLICATION_SIGNALS_SLO=true` の場合のみ作成します。
+- Custom Metricsは即時削除できず、利用停止後に時間経過で表示されなくなります。
+- SNSメール通知は受信者側の確認が必要です。
+
+## ステータス
+
+合格

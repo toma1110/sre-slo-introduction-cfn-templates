@@ -8,7 +8,7 @@ AWS_REGION="${AWS_REGION:-us-east-1}"
 PROJECT_NAME="${PROJECT_NAME:-udemy-slo-sample}"
 SERVICE_NAME="${SERVICE_NAME:-sample-api}"
 NOTIFICATION_EMAIL="${NOTIFICATION_EMAIL:-}"
-DASHBOARD_TITLE="${DASHBOARD_TITLE:-SLO Adoption Dashboard}"
+DASHBOARD_TITLE="${DASHBOARD_TITLE:-SLO導入ダッシュボード}"
 AVAILABILITY_SLO_TARGET="${AVAILABILITY_SLO_TARGET:-99.9}"
 LATENCY_THRESHOLD_MS="${LATENCY_THRESHOLD_MS:-300}"
 ERROR_RATE_THRESHOLD_PERCENT="${ERROR_RATE_THRESHOLD_PERCENT:-1}"
@@ -99,7 +99,7 @@ put_metrics() {
 }
 
 smoke_test() {
-  log "smoke testを実行します"
+  log "スモークテストを実行します"
   STACK_NAME="$STACK_NAME" AWS_REGION="$AWS_REGION" ENABLE_APPLICATION_SIGNALS_SLO="$ENABLE_APPLICATION_SIGNALS_SLO" "${SCRIPT_DIR}/smoke_test.sh"
 }
 
@@ -138,23 +138,23 @@ full_validation() {
 
 usage() {
   cat <<USAGE
-Usage: $0 [validate|create|update|put-metrics|put-good|put-bad|smoke|delete|full]
+使い方: $0 [validate|create|update|put-metrics|put-good|put-bad|smoke|delete|full]
 
-Environment variables:
-  STACK_NAME                       Default: aws-slo-adoption-dev-slo
-  AWS_REGION                       Default: us-east-1
-  PROJECT_NAME                     Default: udemy-slo-sample
-  SERVICE_NAME                     Default: sample-api
-  NOTIFICATION_EMAIL               Default: empty
-  DASHBOARD_TITLE                  Default: SLO Adoption Dashboard
-  AVAILABILITY_SLO_TARGET          Default: 99.9
-  LATENCY_THRESHOLD_MS             Default: 300
-  ERROR_RATE_THRESHOLD_PERCENT     Default: 1
-  FAST_BURN_RATE_THRESHOLD         Default: 14
-  SLOW_BURN_RATE_THRESHOLD         Default: 2
-  ENABLE_APPLICATION_SIGNALS_SLO   Default: false
-  SCENARIO                         Default for put-metrics: good
-  TEMPLATE_FILE                    Default: ./template.yaml
+環境変数:
+  STACK_NAME                       デフォルト: aws-slo-adoption-dev-slo
+  AWS_REGION                       デフォルト: us-east-1
+  PROJECT_NAME                     デフォルト: udemy-slo-sample
+  SERVICE_NAME                     デフォルト: sample-api
+  NOTIFICATION_EMAIL               デフォルト: 空
+  DASHBOARD_TITLE                  デフォルト: SLO導入ダッシュボード
+  AVAILABILITY_SLO_TARGET          デフォルト: 99.9
+  LATENCY_THRESHOLD_MS             デフォルト: 300
+  ERROR_RATE_THRESHOLD_PERCENT     デフォルト: 1
+  FAST_BURN_RATE_THRESHOLD         デフォルト: 14
+  SLOW_BURN_RATE_THRESHOLD         デフォルト: 2
+  ENABLE_APPLICATION_SIGNALS_SLO   デフォルト: false
+  SCENARIO                         put-metricsのデフォルト: good
+  TEMPLATE_FILE                    デフォルト: ./template.yaml
 USAGE
 }
 

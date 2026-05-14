@@ -51,8 +51,8 @@ esac
 require_aws
 
 log "CloudWatch Custom Metricsへ投入します"
-log "ProjectName=${PROJECT_NAME}, Service=${SERVICE_NAME}, Scenario=${SCENARIO}"
-log "Availability=${AVAILABILITY}%, Latency=${LATENCY_MS}ms, Requests=${REQUEST_COUNT}, Errors=${ERROR_COUNT}"
+log "ProjectName=${PROJECT_NAME}, Service=${SERVICE_NAME}, シナリオ=${SCENARIO}"
+log "可用性=${AVAILABILITY}%, レイテンシ=${LATENCY_MS}ms, リクエスト数=${REQUEST_COUNT}, エラー数=${ERROR_COUNT}"
 
 aws cloudwatch put-metric-data \
   --namespace "UdemyAICompany/SLO" \
