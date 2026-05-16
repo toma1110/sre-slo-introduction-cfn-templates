@@ -1,57 +1,57 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "AWS SLO導入講座のハンズオンです。CloudWatch SLIメトリクス、SLOリスクアラーム、バーンレートアラーム、Dashboard、SNS、任意のApplication Signals SLOを作成します。"
+Description: "AWS SLO adoption course hands-on: CloudWatch SLI metrics, SLO risk alarms, burn-rate alarms, dashboard, SNS, and optional Application Signals SLO."
 
 Parameters:
   ProjectName:
     Type: String
     Default: udemy-slo-sample
-    Description: リソース名とメトリクスディメンションに使うプロジェクト名です。
+    Description: Project name used for resource names and metric dimensions.
     AllowedPattern: "^[a-z0-9][a-z0-9-]{2,40}[a-z0-9]$"
-    ConstraintDescription: 4〜42文字の小文字英数字とハイフンを指定してください。
+    ConstraintDescription: Use 4 to 42 lowercase letters, numbers, and hyphens.
   ServiceName:
     Type: String
     Default: sample-api
-    Description: サンプルSLI Custom Metricsに使うサービスディメンションです。
+    Description: Service dimension used for the sample SLI custom metrics.
     AllowedPattern: "^[a-z0-9][a-z0-9-]{1,40}[a-z0-9]$"
-    ConstraintDescription: 3〜42文字の小文字英数字とハイフンを指定してください。
+    ConstraintDescription: Use 3 to 42 lowercase letters, numbers, and hyphens.
   NotificationEmail:
     Type: String
     Default: ""
-    Description: SNS通知を受け取る任意のメールアドレスです。
+    Description: Optional email address for SNS notification subscription.
     AllowedPattern: "^$|^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
-    ConstraintDescription: 空欄、または有効なメールアドレスを指定してください。
+    ConstraintDescription: Leave empty or enter a valid email address.
   DashboardTitle:
     Type: String
-    Default: SLO導入ダッシュボード
-    Description: CloudWatch Dashboardに表示するタイトルです。
+    Default: SLO Adoption Dashboard
+    Description: Title shown in the CloudWatch dashboard.
   AvailabilitySloTarget:
     Type: Number
     Default: 99.9
-    Description: 可用性SLOの目標値です。エラーバジェット率は100からこの値を引いた割合です。
+    Description: Availability SLO target percentage. Error budget percentage is 100 minus this value.
     MinValue: 90
     MaxValue: 99.99
   LatencyThresholdMs:
     Type: Number
     Default: 300
-    Description: p99レイテンシSLOのしきい値です。単位はミリ秒です。
+    Description: p99 latency SLO threshold in milliseconds.
     MinValue: 1
     MaxValue: 60000
   ErrorRateThresholdPercent:
     Type: Number
     Default: 1
-    Description: エラー率アラームのしきい値です。単位は%です。
+    Description: Error-rate alarm threshold percentage.
     MinValue: 0.01
     MaxValue: 100
   FastBurnRateThreshold:
     Type: Number
     Default: 14
-    Description: 高速バーンレートアラームのしきい値です。14はエラーバジェットを計画の約14倍の速度で消費している状態を表します。
+    Description: Fast burn-rate alarm threshold. 14 means the error budget is being consumed about 14 times faster than planned.
     MinValue: 1
     MaxValue: 1000
   SlowBurnRateThreshold:
     Type: Number
     Default: 2
-    Description: 継続的なエラーバジェット消費を検知する低速バーンレートアラームのしきい値です。
+    Description: Slow burn-rate alarm threshold for sustained budget consumption.
     MinValue: 0.1
     MaxValue: 1000
   EnableApplicationSignalsSlo:
@@ -60,7 +60,7 @@ Parameters:
     AllowedValues:
       - "true"
       - "false"
-    Description: 任意のApplication Signals SLOを作成するかを指定します。サービスリンクロールの作成やSLO料金が発生する場合があります。
+    Description: Create an optional Application Signals SLO. This may create a service-linked role and can incur SLO charges.
 
 Conditions:
   HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, ""]]
@@ -89,7 +89,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub "${ProjectName}-availability-slo-risk"
-      AlarmDescription: "可用性SLIがSLO目標値を下回っています。"
+      AlarmDescription: "Availability SLI is below the SLO target."
       Namespace: "UdemyAICompany/SLO"
       MetricName: "Availability"
       Dimensions:
@@ -116,7 +116,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub "${ProjectName}-latency-slo-risk"
-      AlarmDescription: "p99レイテンシSLIがSLOしきい値を上回っています。"
+      AlarmDescription: "p99 latency SLI is above the SLO threshold."
       Namespace: "UdemyAICompany/SLO"
       MetricName: "Latency"
       Dimensions:
@@ -143,7 +143,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub "${ProjectName}-error-rate-slo-risk"
-      AlarmDescription: "ErrorCount / RequestCountから計算したエラー率がしきい値を上回っています。"
+      AlarmDescription: "Error rate calculated from ErrorCount / RequestCount is above the threshold."
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       DatapointsToAlarm: 1
@@ -180,7 +180,7 @@ Resources:
                   Value: !Ref ServiceName
         - Id: e1
           Expression: "IF(m2 > 0, 100 * m1 / m2, 0)"
-          Label: "エラー率 (%)"
+          Label: "Error rate (%)"
           ReturnData: true
       Tags:
         - Key: Project
@@ -192,7 +192,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub "${ProjectName}-fast-burn-rate"
-      AlarmDescription: "エラー率を許容エラーバジェット率で割って算出する高速バーンレートアラームです。"
+      AlarmDescription: "Fast burn-rate alarm based on error-rate divided by the allowed error budget percentage."
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       DatapointsToAlarm: 1
@@ -229,7 +229,7 @@ Resources:
                   Value: !Ref ServiceName
         - Id: e1
           Expression: !Sub "IF(m2 > 0, (100 * m1 / m2) / (100 - ${AvailabilitySloTarget}), 0)"
-          Label: "高速バーンレート"
+          Label: "Fast burn rate"
           ReturnData: true
       Tags:
         - Key: Project
@@ -241,7 +241,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub "${ProjectName}-slow-burn-rate"
-      AlarmDescription: "5分周期で継続的なバーンレートを検知するアラームです。"
+      AlarmDescription: "Sustained burn-rate alarm using a five-minute period."
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 3
       DatapointsToAlarm: 3
@@ -278,7 +278,7 @@ Resources:
                   Value: !Ref ServiceName
         - Id: e1
           Expression: !Sub "IF(m2 > 0, (100 * m1 / m2) / (100 - ${AvailabilitySloTarget}), 0)"
-          Label: "低速バーンレート"
+          Label: "Slow burn rate"
           ReturnData: true
       Tags:
         - Key: Project
@@ -300,7 +300,7 @@ Resources:
               "width": 24,
               "height": 3,
               "properties": {
-                "markdown": "# ${DashboardTitle}\\nCloudFormationで作るSLOハンズオンです。可用性、レイテンシ、エラー率、バーンレートをCloudWatch Custom Metricsで確認します。"
+                "markdown": "# ${DashboardTitle}\\nSLO hands-on dashboard built with CloudFormation. Use CloudWatch custom metrics to review availability, latency, error rate, and burn rate."
               }
             },
             {
@@ -310,7 +310,7 @@ Resources:
               "width": 12,
               "height": 6,
               "properties": {
-                "title": "可用性SLI",
+                "title": "Availability SLI",
                 "region": "${AWS::Region}",
                 "metrics": [
                   [ "UdemyAICompany/SLO", "Availability", "ProjectName", "${ProjectName}", "Service", "${ServiceName}" ]
@@ -333,7 +333,7 @@ Resources:
               "width": 12,
               "height": 6,
               "properties": {
-                "title": "p99レイテンシSLI",
+                "title": "Latency SLI p99",
                 "region": "${AWS::Region}",
                 "metrics": [
                   [ "UdemyAICompany/SLO", "Latency", "ProjectName", "${ProjectName}", "Service", "${ServiceName}", { "stat": "p99" } ]
@@ -354,10 +354,10 @@ Resources:
               "width": 12,
               "height": 6,
               "properties": {
-                "title": "エラー率 (%)",
+                "title": "Error Rate (%)",
                 "region": "${AWS::Region}",
                 "metrics": [
-                  [ { "expression": "IF(m2 > 0, 100 * m1 / m2, 0)", "label": "エラー率 (%)", "id": "e1", "region": "${AWS::Region}" } ],
+                  [ { "expression": "IF(m2 > 0, 100 * m1 / m2, 0)", "label": "Error rate (%)", "id": "e1", "region": "${AWS::Region}" } ],
                   [ "UdemyAICompany/SLO", "ErrorCount", "ProjectName", "${ProjectName}", "Service", "${ServiceName}", { "id": "m1", "visible": false, "stat": "Sum" } ],
                   [ ".", "RequestCount", ".", ".", ".", ".", { "id": "m2", "visible": false, "stat": "Sum" } ]
                 ],
@@ -365,7 +365,7 @@ Resources:
                 "view": "timeSeries",
                 "annotations": {
                   "horizontal": [
-                    { "label": "エラー率しきい値 ${ErrorRateThresholdPercent}%", "value": ${ErrorRateThresholdPercent} }
+                    { "label": "Error threshold ${ErrorRateThresholdPercent}%", "value": ${ErrorRateThresholdPercent} }
                   ]
                 }
               }
@@ -377,10 +377,10 @@ Resources:
               "width": 12,
               "height": 6,
               "properties": {
-                "title": "バーンレート",
+                "title": "Burn Rate",
                 "region": "${AWS::Region}",
                 "metrics": [
-                  [ { "expression": "IF(m2 > 0, (100 * m1 / m2) / (100 - ${AvailabilitySloTarget}), 0)", "label": "バーンレート", "id": "e1", "region": "${AWS::Region}" } ],
+                  [ { "expression": "IF(m2 > 0, (100 * m1 / m2) / (100 - ${AvailabilitySloTarget}), 0)", "label": "Burn rate", "id": "e1", "region": "${AWS::Region}" } ],
                   [ "UdemyAICompany/SLO", "ErrorCount", "ProjectName", "${ProjectName}", "Service", "${ServiceName}", { "id": "m1", "visible": false, "stat": "Sum" } ],
                   [ ".", "RequestCount", ".", ".", ".", ".", { "id": "m2", "visible": false, "stat": "Sum" } ]
                 ],
@@ -388,8 +388,8 @@ Resources:
                 "view": "timeSeries",
                 "annotations": {
                   "horizontal": [
-                    { "label": "高速バーン ${FastBurnRateThreshold}x", "value": ${FastBurnRateThreshold} },
-                    { "label": "低速バーン ${SlowBurnRateThreshold}x", "value": ${SlowBurnRateThreshold} }
+                    { "label": "Fast burn ${FastBurnRateThreshold}x", "value": ${FastBurnRateThreshold} },
+                    { "label": "Slow burn ${SlowBurnRateThreshold}x", "value": ${SlowBurnRateThreshold} }
                   ]
                 }
               }
@@ -401,11 +401,11 @@ Resources:
               "width": 24,
               "height": 6,
               "properties": {
-                "title": "リクエスト数とエラー数",
+                "title": "Requests and Errors",
                 "region": "${AWS::Region}",
                 "metrics": [
-                  [ "UdemyAICompany/SLO", "RequestCount", "ProjectName", "${ProjectName}", "Service", "${ServiceName}", { "stat": "Sum", "label": "リクエスト数" } ],
-                  [ ".", "ErrorCount", ".", ".", ".", ".", { "stat": "Sum", "label": "エラー数" } ]
+                  [ "UdemyAICompany/SLO", "RequestCount", "ProjectName", "${ProjectName}", "Service", "${ServiceName}", { "stat": "Sum", "label": "Requests" } ],
+                  [ ".", "ErrorCount", ".", ".", ".", ".", { "stat": "Sum", "label": "Errors" } ]
                 ],
                 "period": 60,
                 "view": "timeSeries"
@@ -419,7 +419,7 @@ Resources:
     Condition: CreateApplicationSignalsSlo
     Properties:
       Name: !Sub "${ProjectName}-latency-slo"
-      Description: "サンプルCloudWatchレイテンシメトリクスに対する任意のperiod-based SLOです。"
+      Description: "Optional period-based SLO on a sample CloudWatch latency metric."
       Sli:
         SliMetric:
           MetricDataQueries:
@@ -457,36 +457,36 @@ Resources:
 
 Outputs:
   MetricsNamespace:
-    Description: ハンズオンで使うCustom Metricsの名前空間です。
+    Description: Custom metric namespace used by the hands-on.
     Value: "UdemyAICompany/SLO"
   ProjectNameOutput:
-    Description: サンプルメトリクスで使うProjectNameディメンション値です。
+    Description: Project name dimension value used by the sample metrics.
     Value: !Ref ProjectName
   ServiceNameOutput:
-    Description: サンプルメトリクスで使うServiceディメンション値です。
+    Description: Service dimension value used by the sample metrics.
     Value: !Ref ServiceName
   AlarmTopicArn:
-    Description: SLOアラーム通知用SNS TopicのARNです。
+    Description: SNS topic ARN for SLO alarm notifications.
     Value: !Ref SloAlarmTopic
   AvailabilityAlarmName:
-    Description: 可用性SLOリスク用CloudWatch Alarm名です。
+    Description: CloudWatch alarm name for availability SLO risk.
     Value: !Ref AvailabilityAlarm
   LatencyAlarmName:
-    Description: レイテンシSLOリスク用CloudWatch Alarm名です。
+    Description: CloudWatch alarm name for latency SLO risk.
     Value: !Ref LatencyAlarm
   ErrorRateAlarmName:
-    Description: エラー率SLOリスク用CloudWatch Alarm名です。
+    Description: CloudWatch alarm name for error-rate SLO risk.
     Value: !Ref ErrorRateAlarm
   FastBurnRateAlarmName:
-    Description: 高速バーンレートリスク用CloudWatch Alarm名です。
+    Description: CloudWatch alarm name for fast burn-rate risk.
     Value: !Ref FastBurnRateAlarm
   SlowBurnRateAlarmName:
-    Description: 継続的なバーンレートリスク用CloudWatch Alarm名です。
+    Description: CloudWatch alarm name for sustained burn-rate risk.
     Value: !Ref SlowBurnRateAlarm
   DashboardName:
-    Description: CloudWatch Dashboard名です。
+    Description: CloudWatch dashboard name.
     Value: !Ref SloDashboard
   OptionalLatencySloArn:
     Condition: CreateApplicationSignalsSlo
-    Description: 任意で作成したApplication Signals SLOのARNです。
+    Description: Optional Application Signals SLO ARN.
     Value: !Ref OptionalLatencySlo

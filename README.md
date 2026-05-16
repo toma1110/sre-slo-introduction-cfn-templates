@@ -126,7 +126,7 @@ SCENARIO=recovery ./validate.sh put-metrics
 | `PROJECT_NAME` | `udemy-slo-sample` | リソース名の接頭辞、CloudWatchメトリクスのディメンション |
 | `SERVICE_NAME` | `sample-api` | サンプルサービス用のメトリクスディメンション |
 | `NOTIFICATION_EMAIL` | 空 | 任意のSNSメール通知先 |
-| `DASHBOARD_TITLE` | `SLO導入ダッシュボード` | Dashboardタイトル |
+| `DASHBOARD_TITLE` | `SLO Adoption Dashboard` | Dashboardタイトル |
 | `AVAILABILITY_SLO_TARGET` | `99.9` | 可用性SLO目標値（%） |
 | `LATENCY_THRESHOLD_MS` | `300` | p99レイテンシしきい値 |
 | `ERROR_RATE_THRESHOLD_PERCENT` | `1` | エラー率アラームしきい値 |

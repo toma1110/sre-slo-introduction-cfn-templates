@@ -8,7 +8,7 @@ AWS_REGION="${AWS_REGION:-us-east-1}"
 PROJECT_NAME="${PROJECT_NAME:-udemy-slo-sample}"
 SERVICE_NAME="${SERVICE_NAME:-sample-api}"
 NOTIFICATION_EMAIL="${NOTIFICATION_EMAIL:-}"
-DASHBOARD_TITLE="${DASHBOARD_TITLE:-SLO導入ダッシュボード}"
+DASHBOARD_TITLE="${DASHBOARD_TITLE:-SLO Adoption Dashboard}"
 AVAILABILITY_SLO_TARGET="${AVAILABILITY_SLO_TARGET:-99.9}"
 LATENCY_THRESHOLD_MS="${LATENCY_THRESHOLD_MS:-300}"
 ERROR_RATE_THRESHOLD_PERCENT="${ERROR_RATE_THRESHOLD_PERCENT:-1}"
@@ -146,7 +146,7 @@ usage() {
   PROJECT_NAME                     デフォルト: udemy-slo-sample
   SERVICE_NAME                     デフォルト: sample-api
   NOTIFICATION_EMAIL               デフォルト: 空
-  DASHBOARD_TITLE                  デフォルト: SLO導入ダッシュボード
+  DASHBOARD_TITLE                  デフォルト: SLO Adoption Dashboard
   AVAILABILITY_SLO_TARGET          デフォルト: 99.9
   LATENCY_THRESHOLD_MS             デフォルト: 300
   ERROR_RATE_THRESHOLD_PERCENT     デフォルト: 1
