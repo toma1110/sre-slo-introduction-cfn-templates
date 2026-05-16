@@ -145,6 +145,23 @@ export ENABLE_APPLICATION_SIGNALS_SLO=true
 ./validate.sh create
 ```
 
+有効化すると変わること:
+
+- `AWS::ApplicationSignals::ServiceLevelObjective` が1つ追加作成される
+- リソース名は `${PROJECT_NAME}-latency-slo`
+- 対象はこのハンズオンのサンプルCustom Metric `UdemyAICompany/SLO` の `Latency` p99
+- しきい値は `LATENCY_THRESHOLD_MS`
+- CloudFormation Outputsに `OptionalLatencySloArn` が追加される
+- `smoke_test.sh` が `OptionalLatencySloArn` の存在も確認する
+- Application Signals SLOの料金やサービスリンクロール作成が発生する場合がある
+
+有効化しても変わらないこと:
+
+- 標準のCloudWatch Alarm、Dashboard、SNS、Custom Metricsはそのまま作成される
+- Dashboardの見方は標準ハンズオンと同じ
+- 実アプリケーションの自動計装やService Mapはこのテンプレートだけでは増えない
+- SLO RecommendationsやSLO Performance Reportは、実アプリ計装や十分なメトリクス期間が必要なため、このハンズオンでは確認対象にしない
+
 注意:
 
 - Application Signals SLOには料金が発生する場合があります。
