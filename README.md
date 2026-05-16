@@ -14,11 +14,9 @@ AWS上でSLO監視の基本を学ぶための、CloudFormationハンズオン用
   - 高速バーンレートリスク
   - 低速バーンレートリスク
 - CloudWatch Dashboard
-  - 可用性
-  - p99レイテンシ
-  - エラー率
-  - バーンレート
-  - リクエスト数とエラー数
+  - 上段: Availability attainment / Error budget remaining estimate / Current burn rate / Alarm state
+  - 中段: Availability trend / Latency p99 trend / Error rate trend / Burn rate trend
+  - 下段: Requests and Errors / Runbook and next action
 - オプションのApplication Signals SLO
   - デフォルトでは作成しません
   - `ENABLE_APPLICATION_SIGNALS_SLO=true` を指定した場合のみ作成します
@@ -74,6 +72,8 @@ export SERVICE_NAME=sample-api
 sre-slo-intro-dev-dashboard
 ```
 
+Dashboardは、セクション7の運用担当向けダッシュボードに合わせています。上段で現在の状態、中段で時系列の悪化、Alarm stateで発火理由、下段でRunbook / next actionを確認します。
+
 次に、SLOを悪化させるサンプルメトリクスを投入します。
 
 ```bash
@@ -81,6 +81,8 @@ sre-slo-intro-dev-dashboard
 ```
 
 Alarmの状態やDashboardのグラフ反映には数分かかる場合があります。
+
+実サービスでは、Runbook / next actionからCPU、DB、キュー、外部依存などの内部メトリクスへ進む想定です。このハンズオンでは低コスト化のため、内部メトリクスは作成せず、Requests and Errorsを原因調査の入口として扱います。
 
 ## フルライフサイクルテスト
 
