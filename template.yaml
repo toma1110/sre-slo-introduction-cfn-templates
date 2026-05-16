@@ -300,7 +300,7 @@ Resources:
               "width": 24,
               "height": 3,
               "properties": {
-                "markdown": "# ${DashboardTitle}\\nSLO hands-on dashboard built with CloudFormation. Use CloudWatch custom metrics to review availability, latency, error rate, and burn rate."
+                "markdown": "# ${DashboardTitle}\nSLO hands-on dashboard built with CloudFormation. Use CloudWatch custom metrics to review availability, latency, error rate, and burn rate."
               }
             },
             {
